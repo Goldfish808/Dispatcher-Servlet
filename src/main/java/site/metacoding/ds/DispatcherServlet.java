@@ -1,6 +1,8 @@
 package site.metacoding.ds;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -34,18 +36,30 @@ public class DispatcherServlet extends HttpServlet {
 	private void doProcess(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		System.out.println("doProcess 실행됨");
 		String httpMethod = req.getMethod();
-		System.out.println(httpMethod);
+		//System.out.println(httpMethod);
 		//서버주소 외 뒤의 주소를 파싱해줌
 		String identifier = req.getRequestURI();
-		System.out.println(identifier);
+		//System.out.println(identifier);
 		
 		UserController c = new UserController();
-		if (identifier.equals("/join")) {
-			c.join();
-		}else if(identifier.equals("/login")) {
-			c.login();
-		}else {
-			System.out.println("잘못된 요청입니다");
+		
+		Method[] methodList = UserController.class.getDeclaredMethods(); //유저컨트롤러 내 모든 메서드 분석
+		for (Method method : methodList) { //foreach 는 우측에 배열만 들어옴
+			//System.out.println(method.getName());
+			
+			Annotation annotation = method.getDeclaredAnnotation(RequestMapping.class);
+			
+			//Annotation 을 다운캐스팅
+			RequestMapping requestMapping = (RequestMapping)annotation;
+			try {
+				//System.out.println(requestMapping.value()); // 어노테이션의 벨류값을 찾아감
+				
+				if(identifier.equals(requestMapping.value())){
+					method.invoke(c);
+				}
+			} catch (Exception e) {
+				System.out.println(method.getName()+" 에 어노테이션이 없습니다");
+			}
 		}
 	}
 	
